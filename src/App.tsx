@@ -14,6 +14,7 @@ import Communities from "./pages/Communities";
 import CommunityDetail from "./pages/CommunityDetail";
 import Messages from "./pages/Messages";
 import Settings from "./pages/Settings";
+import Create from "./pages/Create";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/messages" element={<Messages />} />
             <Route path="/messages/:conversationId" element={<Messages />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/create" element={<Create />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
