@@ -114,7 +114,8 @@ export default function Communities() {
 
     setSaving(true);
     try {
-      const sessionToken = localStorage.getItem('session_token');
+      const stored = localStorage.getItem('samrambhak_auth');
+      const sessionToken = stored ? JSON.parse(stored).session_token : null;
       const { data, error } = await supabase.functions.invoke('manage-community', {
         body: {
           action: 'create',
@@ -146,7 +147,8 @@ export default function Communities() {
     }
 
     try {
-      const sessionToken = localStorage.getItem('session_token');
+      const stored = localStorage.getItem('samrambhak_auth');
+      const sessionToken = stored ? JSON.parse(stored).session_token : null;
       const { data, error } = await supabase.functions.invoke('manage-community', {
         body: {
           action: 'join',
@@ -169,7 +171,8 @@ export default function Communities() {
     if (!user) return;
 
     try {
-      const sessionToken = localStorage.getItem('session_token');
+      const stored = localStorage.getItem('samrambhak_auth');
+      const sessionToken = stored ? JSON.parse(stored).session_token : null;
       const { data, error } = await supabase.functions.invoke('manage-community', {
         body: {
           action: 'leave',
@@ -203,7 +206,8 @@ export default function Communities() {
 
     setSaving(true);
     try {
-      const sessionToken = localStorage.getItem('session_token');
+      const stored = localStorage.getItem('samrambhak_auth');
+      const sessionToken = stored ? JSON.parse(stored).session_token : null;
       const { data, error } = await supabase.functions.invoke('manage-community', {
         body: {
           action: 'update',
@@ -234,7 +238,8 @@ export default function Communities() {
     if (!confirm('Are you sure you want to delete this community? This action cannot be undone.')) return;
 
     try {
-      const sessionToken = localStorage.getItem('session_token');
+      const stored = localStorage.getItem('samrambhak_auth');
+      const sessionToken = stored ? JSON.parse(stored).session_token : null;
       const { data, error } = await supabase.functions.invoke('manage-community', {
         body: {
           action: 'delete',
