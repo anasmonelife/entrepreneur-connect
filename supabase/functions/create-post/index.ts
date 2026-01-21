@@ -80,6 +80,14 @@ serve(async (req) => {
       );
     }
 
+    // Check for blocked words in content
+    let containsBlockedWords = false;
+    if (content) {
+      const { data: blockedResult } = await supabase
+        .rpc('contains_blocked_words', { content });
+      containsBlockedWords = blockedResult === true;
+    }
+
     // Create the post
     const { data: post, error: postError } = await supabase
       .from("posts")
@@ -99,6 +107,27 @@ serve(async (req) => {
         JSON.stringify({ error: "Failed to create post" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // Auto-report if blocked words detected
+    if (containsBlockedWords) {
+      console.log("Blocked words detected in post:", post.id);
+      const { error: reportError } = await supabase
+        .from("reports")
+        .insert({
+          reporter_id: null, // System-generated report
+          reported_id: post.id,
+          reported_type: "post",
+          reason: "Blocked words detected",
+          description: "This post was automatically flagged for containing blocked/monitored words.",
+          status: "pending",
+        });
+      
+      if (reportError) {
+        console.error("Auto-report creation error:", reportError);
+      } else {
+        console.log("Auto-report created for post:", post.id);
+      }
     }
 
     return new Response(

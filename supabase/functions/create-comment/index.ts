@@ -29,6 +29,10 @@ serve(async (req) => {
       );
     }
 
+    // Check for blocked words in content
+    const { data: containsBlockedWords } = await supabase
+      .rpc('contains_blocked_words', { content });
+
     // Create the comment
     const { data: comment, error: commentError } = await supabase
       .from("comments")
@@ -49,6 +53,27 @@ serve(async (req) => {
         JSON.stringify({ error: "Failed to create comment" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // Auto-report if blocked words detected
+    if (containsBlockedWords === true) {
+      console.log("Blocked words detected in comment:", comment.id);
+      const { error: reportError } = await supabase
+        .from("reports")
+        .insert({
+          reporter_id: null, // System-generated report
+          reported_id: comment.id,
+          reported_type: "comment",
+          reason: "Blocked words detected",
+          description: "This comment was automatically flagged for containing blocked/monitored words.",
+          status: "pending",
+        });
+      
+      if (reportError) {
+        console.error("Auto-report creation error:", reportError);
+      } else {
+        console.log("Auto-report created for comment:", comment.id);
+      }
     }
 
     console.log("Comment created successfully:", comment.id);
