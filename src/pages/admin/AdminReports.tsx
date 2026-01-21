@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { DataTable, Column } from '@/components/admin/DataTable';
@@ -23,7 +24,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { MoreHorizontal, CheckCircle, XCircle, Eye, Clock } from 'lucide-react';
+import { MoreHorizontal, CheckCircle, XCircle, Eye, Clock, ExternalLink, EyeOff, Trash2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -110,6 +111,46 @@ export default function AdminReports() {
     },
   });
 
+  const hidePostMutation = useMutation({
+    mutationFn: async (postId: string) => {
+      const { error } = await supabase
+        .from('posts')
+        .update({ 
+          is_hidden: true, 
+          hidden_at: new Date().toISOString(),
+          hidden_reason: 'Hidden by admin due to report'
+        })
+        .eq('id', postId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Post hidden successfully');
+      queryClient.invalidateQueries({ queryKey: ['admin-reports'] });
+    },
+    onError: (error) => {
+      toast.error('Failed to hide post: ' + error.message);
+    },
+  });
+
+  const deletePostMutation = useMutation({
+    mutationFn: async (postId: string) => {
+      const { error } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', postId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Post deleted successfully');
+      queryClient.invalidateQueries({ queryKey: ['admin-reports'] });
+    },
+    onError: (error) => {
+      toast.error('Failed to delete post: ' + error.message);
+    },
+  });
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
@@ -187,6 +228,14 @@ export default function AdminReports() {
               <Eye className="h-4 w-4 mr-2" />
               View Details
             </DropdownMenuItem>
+            {report.reported_type === 'post' && (
+              <DropdownMenuItem asChild>
+                <Link to={`/post/${report.reported_id}`} target="_blank">
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  View Post
+                </Link>
+              </DropdownMenuItem>
+            )}
             {report.status === 'pending' && (
               <>
                 <DropdownMenuSeparator />
@@ -222,6 +271,29 @@ export default function AdminReports() {
                 >
                   <XCircle className="h-4 w-4 mr-2" />
                   Dismiss
+                </DropdownMenuItem>
+              </>
+            )}
+            {report.reported_type === 'post' && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => hidePostMutation.mutate(report.reported_id)}
+                  className="text-orange-600"
+                >
+                  <EyeOff className="h-4 w-4 mr-2" />
+                  Hide Post
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    if (confirm('Are you sure you want to permanently delete this post?')) {
+                      deletePostMutation.mutate(report.reported_id);
+                    }
+                  }}
+                  className="text-destructive"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Post
                 </DropdownMenuItem>
               </>
             )}
